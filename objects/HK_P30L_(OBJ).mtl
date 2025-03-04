@@ -1,0 +1,24 @@
+# Blender 4.2.1 LTS MTL File: 'HK_P30L_(Blend).blend'
+# www.blender.org
+
+newmtl H&K_P30L
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd E:/3D Assets/weapons/handguns/Textures/HK_P30L/H&K_P30L_BaseColor.png
+map_Bump -bm 1.000000 E:/3D Assets/weapons/handguns/Textures/HK_P30L/H&K_P30L_Normal_GL.png
+
+newmtl cartridge
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd E:/3D Assets/weapons/handguns/Textures/HK_P30L/cartridge_BaseColor.png
+map_Bump -bm 1.000000 E:/3D Assets/weapons/handguns/Textures/HK_P30L/cartridge_Normal_GL.png
