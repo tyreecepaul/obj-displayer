@@ -4,23 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3cfb31fc-a889-480b-b89f-7cbfe2f6bae2" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/graphics-assignment.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/obj_loader.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/objects/1.obj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/objects/10299_Monkey-Wrench_v1_L3.obj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/objects/12262_Crocodile_v1_l2.obj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/objects/HK_P30L_(OBJ).mtl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/objects/HK_P30L_(OBJ).obj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/objects/USS enterprise gray scale.obj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/objects/cow.obj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/shaders/fragment.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/shaders/vertex.txt" afterDir="false" />
+    <list default="true" id="3cfb31fc-a889-480b-b89f-7cbfe2f6bae2" name="Changes" comment="working model">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/objects/HK_P30L_(OBJ).mtl" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,24 +33,24 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.main.executor": "Run",
-    "Python.obj_loader (1).executor": "Run",
-    "Python.prac_files.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Users/tyree/PycharmProjects/graphics-assignment",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.obj_loader (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.prac_files.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/tyree/OneDrive/Documents/Uni/COSC3000&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\tyree\PycharmProjects\graphics-assignment\objects" />
@@ -167,8 +154,19 @@
       <option name="presentableId" value="Default" />
       <updated>1741053454724</updated>
       <workItem from="1741053455772" duration="5120000" />
-      <workItem from="1741059662660" duration="3217000" />
+      <workItem from="1741059662660" duration="5566000" />
+      <workItem from="1741085682537" duration="1193000" />
+      <workItem from="1741132936366" duration="2351000" />
     </task>
+    <task id="LOCAL-00001" summary="working model">
+      <option name="closed" value="true" />
+      <created>1741063162571</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1741063162571</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -185,9 +183,13 @@
       </map>
     </option>
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="working model" />
+    <option name="LAST_COMMIT_MESSAGE" value="working model" />
+  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/graphics_assignment$prac_files.coverage" NAME="prac_files Coverage Results" MODIFIED="1741054633000" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/graphics_assignment$main.coverage" NAME="main Coverage Results" MODIFIED="1741063013832" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/graphics_assignment$obj_loader__1_.coverage" NAME="obj_loader (1) Coverage Results" MODIFIED="1741054915978" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/graphics_assignment$main.coverage" NAME="main Coverage Results" MODIFIED="1741135110603" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/graphics_assignment$obj_loader__1_.coverage" NAME="obj_loader (1) Coverage Results" MODIFIED="1741069572935" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
