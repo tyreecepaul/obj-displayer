@@ -1,0 +1,13 @@
+{
+    "window_size": [1600, 900],
+    "shaders": {
+        "vertex": "shaders/vertex.txt",
+        "fragment": "shaders/fragment.txt"
+    },
+    "objects": {
+        "monkey_wrench": "objects/10299_Monkey-Wrench_v1_L3.obj"
+    },
+    "textures": {
+        "blue": "textures/blue.png"
+    }
+}

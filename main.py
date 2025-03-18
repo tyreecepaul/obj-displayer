@@ -1,4 +1,6 @@
 import sys
+import json
+import logging
 import numpy as np
 import pygame as pg
 from OpenGL.GL import *
@@ -7,173 +9,111 @@ from OpenGL.GLU import *
 import pyrr
 import obj_loader as obj
 
-class GraphicsEngine:
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+
+class Shader:
     """
-    Main graphics engine class responsible for initializing the OpenGL context,
-    loading shaders, managing the main loop, and rendering the scene.
+    Encapsulates shader creation, compilation, and management.
     """
 
-    def __init__(self, filename, window_size=(1600, 900)):
+    def __init__(self, vertex_path, fragment_path):
+        self.program = self._create_shader(vertex_path, fragment_path)
+
+    def _create_shader(self, vertex_path, fragment_path):
         """
-        Initialize the graphics engine, set up the OpenGL context, and load shaders.
+        Compile and link vertex and fragment shaders.
 
-        :param filename: Name of the OBJ file (without extension) to load.
-        :param window_size: Tuple representing the window width and height.
-        """
-        pg.init()
-        self.window_size = window_size
-
-        # Set OpenGL attributes and create the window
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
-        pg.display.set_mode(self.window_size, flags=pg.OPENGL | pg.DOUBLEBUF)
-
-        # Set up OpenGL settings
-        glClearColor(0.1, 0.1, 0.1, 1.0)
-        glEnable(GL_DEPTH_TEST)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-
-        self.clock = pg.time.Clock()
-
-        # Load shaders
-        self.shader = self._create_shader()
-        glUseProgram(self.shader)
-        glUniform1i(glGetUniformLocation(self.shader, "imageTexture"), 0)
-
-        # Initialize the 3D object
-        self.object = Object3D(filename)
-
-        # Set up projection matrix
-        self.projection = pyrr.matrix44.create_perspective_projection_matrix(
-            45, self.window_size[0] / self.window_size[1], 0.1, 100, dtype=np.float32
-        )
-        glUniformMatrix4fv(
-            glGetUniformLocation(self.shader, "projection"),
-            1, GL_FALSE, self.projection
-        )
-
-        # Set up view matrix (camera)
-        self.view = pyrr.matrix44.create_look_at(
-            eye=np.array([0, 0, 60], dtype=np.float32),  # Camera position
-            target=np.array([0, 0, 0], dtype=np.float32),  # Look at origin
-            up=np.array([0, 1, 0], dtype=np.float32)  # Up vector
-        )
-        glUniformMatrix4fv(
-            glGetUniformLocation(self.shader, "view"),
-            1, GL_FALSE, self.view
-        )
-
-        # Get model matrix location
-        self.model_matrix_location = glGetUniformLocation(self.shader, "model")
-
-        self.texture = Material()
-
-        # Start the main loop
-        self.run()
-
-    def _create_shader(self):
-        """
-        Compile and link the vertex and fragment shaders.
-
+        :param vertex_path: Path to the vertex shader file.
+        :param fragment_path: Path to the fragment shader file.
         :return: Compiled shader program.
         """
-        with open('shaders/vertex.txt', 'r') as f:
-            vertex_src = f.read()
-        with open('shaders/fragment.txt', 'r') as f:
-            fragment_src = f.read()
+        try:
+            with open(vertex_path, 'r') as f:
+                vertex_src = f.read()
+            with open(fragment_path, 'r') as f:
+                fragment_src = f.read()
+        except FileNotFoundError as e:
+            logging.error(f"Shader file not found: {e}")
+            sys.exit()
 
-        shader = compileProgram(
-            compileShader(vertex_src, GL_VERTEX_SHADER),
-            compileShader(fragment_src, GL_FRAGMENT_SHADER)
-        )
+        try:
+            shader = compileProgram(
+                compileShader(vertex_src, GL_VERTEX_SHADER),
+                compileShader(fragment_src, GL_FRAGMENT_SHADER)
+            )
+        except Exception as e:
+            logging.error(f"Shader compilation error: {e}")
+            sys.exit()
+
         return shader
 
-    def _check_events(self):
-        """
-        Handle Pygame events such as quitting the application.
-        """
-        for event in pg.event.get():
-            if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
-                self.object.destroy()
-                pg.quit()
-                sys.exit()
+    def use(self):
+        """Activate the shader program."""
+        glUseProgram(self.program)
 
-    def _render(self):
-        """
-        Render the scene by updating the object's rotation, clearing the frame buffer,
-        and drawing the object.
-        """
-        # Update object rotation
-        self.object.eulers[2] += 0.2
-        if self.object.eulers[2] > 360:
-            self.object.eulers[2] -= 360
+    def set_uniform_matrix4fv(self, name, matrix):
+        """Set a 4x4 matrix uniform."""
+        location = glGetUniformLocation(self.program, name)
+        glUniformMatrix4fv(location, 1, GL_FALSE, matrix)
 
-        # Clear frame buffer
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glUseProgram(self.shader)
-
-        # Calculate model matrix
-        model_transform = pyrr.matrix44.create_from_eulers(
-            np.radians(self.object.eulers), dtype=np.float32
-        )
-        model_transform = pyrr.matrix44.multiply(
-            m1=model_transform,
-            m2=pyrr.matrix44.create_from_translation(
-                vec=self.object.position,
-                dtype=np.float32
-            )
-        )
-
-        # Upload model matrix to shader
-        glUniformMatrix4fv(self.model_matrix_location, 1, GL_FALSE, model_transform)
-
-        # Call Shader
-        self.texture.use()
-
-        # Draw the object
-        glBindVertexArray(self.object.vao)
-        glDrawArrays(GL_TRIANGLES, 0, self.object.vertex_count)
-
-        # Swap buffers
-        pg.display.flip()
-
-    def run(self):
-        """
-        Main loop of the graphics engine.
-        """
-        while True:
-            self._check_events()
-            self._render()
-            self.clock.tick(60)
-        self.destroy()
+    def set_uniform_3f(self, name, value):
+        """Set a vec3 uniform."""
+        location = glGetUniformLocation(self.program, name)
+        glUniform3fv(location, 1, value)
 
     def destroy(self):
-        self.object.destroy()
-        self.texture.destroy()
-        glDeleteProgram(self.shader)
-        pg.quit()
+        """Delete the shader program."""
+        glDeleteProgram(self.program)
+
+
+class Camera:
+    """
+    Encapsulates camera functionality, including position, target, and view matrix.
+    """
+
+    def __init__(self, position, target, up):
+        self.position = np.array(position, dtype=np.float32)
+        self.target = np.array(target, dtype=np.float32)
+        self.up = np.array(up, dtype=np.float32)
+        self.update_view_matrix()
+
+    def update_view_matrix(self):
+        """Update the view matrix based on camera position, target, and up vector."""
+        self.view = pyrr.matrix44.create_look_at(
+            eye=self.position,
+            target=self.target,
+            up=self.up
+        )
+
 
 class Material:
-    def __init__(self):
-        # Texture
+    """
+    Encapsulates texture loading and management.
+    """
+
+    def __init__(self, texture_path):
         self.texture = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.texture)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        image = pg.image.load(f"textures/blue.png")
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+
+        # Load texture image
+        image = pg.image.load(texture_path)
         image_width, image_height = image.get_rect().size
         image_data = pg.image.tostring(image, "RGBA")
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data)
         glGenerateMipmap(GL_TEXTURE_2D)
 
     def use(self):
+        """Bind the texture."""
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.texture)
 
     def destroy(self):
+        """Delete the texture."""
         glDeleteTextures(1, [self.texture])
 
 
@@ -183,16 +123,12 @@ class Object3D:
     """
 
     def __init__(self, filename):
-        """
-        Initialize the 3D object by loading vertices from an OBJ file,
-        scaling them, and setting up OpenGL buffers.
-
-        :param filename: Name of the OBJ file (without extension).
-        """
         # Load vertices from OBJ file
-        vertices = obj.load_obj(f"objects/{filename}.obj")
-        # Scale and flatten vertices
+        vertices = obj.load_obj(filename)
         scaled_vertices = self._scale_vertices(vertices, 8)
+
+        if not self._has_texture_coords(scaled_vertices):
+            scaled_vertices = self._add_texture_coords(scaled_vertices)
 
         # Convert to numpy array for OpenGL usage
         self.vertices = np.array(scaled_vertices, dtype=np.float32)
@@ -211,17 +147,20 @@ class Object3D:
         glBufferData(GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, GL_STATIC_DRAW)
 
         # Set up vertex attribute pointers
-        # Position (vx, vy, vz)
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(0))
-
-        # Texture coordinates (tx, ty)
         glEnableVertexAttribArray(1)
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(12))
-
-        # Normals (nx, ny, nz)
         glEnableVertexAttribArray(2)
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(24))
+
+    def _has_texture_coords(self, vertices):
+        """
+        Check if the vertices already include texture coordinates.
+        """
+        # Each vertex has 8 floats: vx, vy, vz, tx, ty, nx, ny, nz
+        return len(vertices) % 8 == 0
+
 
     def _split_array(self, arr, chunk_size):
         """
@@ -304,12 +243,126 @@ class Object3D:
         return self._flatten_vertices(scaled_vertices)
 
     def destroy(self):
-        """
-        Clean up the VAO and VBO.
-        """
+        """Clean up the VAO and VBO."""
         glDeleteBuffers(1, [self.vbo])
         glDeleteVertexArrays(1, [self.vao])
 
 
+class GraphicsEngine:
+    """
+    Main graphics engine class responsible for initializing the OpenGL context,
+    loading shaders, managing the main loop, and rendering the scene.
+    """
+
+    def __init__(self, config_path):
+        # Load configuration
+        with open(config_path, 'r') as f:
+            self.config = json.load(f)
+
+        # Initialize Pygame and OpenGL
+        pg.init()
+        self.window_size = tuple(self.config["window_size"])
+        self.clock = pg.time.Clock()
+
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
+        pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
+        pg.display.set_mode(self.window_size, flags=pg.OPENGL | pg.DOUBLEBUF)
+
+        # Set up OpenGL settings
+        glClearColor(0.1, 0.1, 0.1, 1.0)
+        glEnable(GL_DEPTH_TEST)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+        # Load shaders
+        self.shader = Shader(
+            self.config["shaders"]["vertex"],
+            self.config["shaders"]["fragment"]
+        )
+        self.shader.use()
+
+        # Initialize the 3D object
+        self.object = Object3D(self.config["objects"]["monkey_wrench"])
+
+        # Set up projection matrix
+        self.projection = pyrr.matrix44.create_perspective_projection_matrix(
+            45, self.window_size[0] / self.window_size[1], 0.1, 100, dtype=np.float32
+        )
+        self.shader.set_uniform_matrix4fv("projection", self.projection)
+
+        # Set up camera
+        self.camera = Camera(
+            position=[0, 0, 60],
+            target=[0, 0, 0],
+            up=[0, 1, 0]
+        )
+        self.shader.set_uniform_matrix4fv("view", self.camera.view)
+
+        # Set up texture
+        self.texture = Material(self.config["textures"]["blue"])
+
+        # Start the main loop
+        self.run()
+
+    def _check_events(self):
+        """
+        Handle Pygame events such as quitting the application.
+        """
+        for event in pg.event.get():
+            if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
+                self.object.destroy()
+                pg.quit()
+                sys.exit()
+
+    def _render(self):
+        """
+        Render the scene by updating the object's rotation, clearing the frame buffer,
+        and drawing the object.
+        """
+        # Update object rotation
+        self.object.eulers[2] += 0.2  # Rotate around the Z-axis
+        if self.object.eulers[2] > 360:
+            self.object.eulers[2] -= 360
+
+        # Clear frame buffer
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        self.shader.use()
+
+        # Calculate model matrix
+        model_transform = pyrr.matrix44.create_from_eulers(
+            np.radians(self.object.eulers), dtype=np.float32
+        )
+        model_transform = pyrr.matrix44.multiply(
+            m1=model_transform,
+            m2=pyrr.matrix44.create_from_translation(
+                vec=self.object.position,
+                dtype=np.float32
+            )
+        )
+
+        # Upload model matrix to shader
+        self.shader.set_uniform_matrix4fv("model", model_transform)
+
+        # Set light and camera positions for lighting calculations
+        light_pos = np.array([10.0, 10.0, 10.0], dtype=np.float32)
+        view_pos = self.camera.position
+        self.shader.set_uniform_3f("lightPos", light_pos)
+        self.shader.set_uniform_3f("viewPos", view_pos)
+
+        # Bind texture and draw the object
+        self.texture.use()
+        glBindVertexArray(self.object.vao)
+        glDrawArrays(GL_TRIANGLES, 0, self.object.vertex_count)
+
+        # Swap buffers
+        pg.display.flip()
+
+    def run(self):
+        """Main loop of the graphics engine."""
+        while True:
+            self._check_events()
+            self._render()
+            self.clock.tick(60)
+
 if __name__ == '__main__':
-    engine = GraphicsEngine("10299_Monkey-Wrench_v1_L3")
+    engine = GraphicsEngine("config.json")
