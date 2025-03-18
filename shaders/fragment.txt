@@ -5,6 +5,8 @@ in vec3 v_normal;
 
 out vec4 frag_color;
 
+uniform sampler2D imageTexture;
+
 void main() {
     frag_color = vec4(v_normal * 0.5 + 0.5, 1.0); // Visualize normals
 }

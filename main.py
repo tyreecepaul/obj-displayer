@@ -39,6 +39,7 @@ class GraphicsEngine:
         # Load shaders
         self.shader = self._create_shader()
         glUseProgram(self.shader)
+        glUniform1i(glGetUniformLocation(self.shader, "imageTexture"), 0)
 
         # Initialize the 3D object
         self.object = Object3D(filename)
@@ -65,6 +66,8 @@ class GraphicsEngine:
 
         # Get model matrix location
         self.model_matrix_location = glGetUniformLocation(self.shader, "model")
+
+        self.texture = Material()
 
         # Start the main loop
         self.run()
@@ -125,6 +128,9 @@ class GraphicsEngine:
         # Upload model matrix to shader
         glUniformMatrix4fv(self.model_matrix_location, 1, GL_FALSE, model_transform)
 
+        # Call Shader
+        self.texture.use()
+
         # Draw the object
         glBindVertexArray(self.object.vao)
         glDrawArrays(GL_TRIANGLES, 0, self.object.vertex_count)
@@ -140,6 +146,35 @@ class GraphicsEngine:
             self._check_events()
             self._render()
             self.clock.tick(60)
+        self.destroy()
+
+    def destroy(self):
+        self.object.destroy()
+        self.texture.destroy()
+        glDeleteProgram(self.shader)
+        pg.quit()
+
+class Material:
+    def __init__(self):
+        # Texture
+        self.texture = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self.texture)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        image = pg.image.load(f"textures/blue.png")
+        image_width, image_height = image.get_rect().size
+        image_data = pg.image.tostring(image, "RGBA")
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data)
+        glGenerateMipmap(GL_TEXTURE_2D)
+
+    def use(self):
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, self.texture)
+
+    def destroy(self):
+        glDeleteTextures(1, [self.texture])
 
 
 class Object3D:
@@ -186,7 +221,7 @@ class Object3D:
 
         # Normals (nx, ny, nz)
         glEnableVertexAttribArray(2)
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(20))
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(24))
 
     def _split_array(self, arr, chunk_size):
         """
