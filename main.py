@@ -12,6 +12,47 @@ import obj_loader as obj
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
+class Plane:
+    def __init__(self):
+        self.plane_vertices = np.array([
+            #  X,   Y,   Z,   Nx, Ny, Nz
+            -100, 0, -100, 0, 1, 0,
+            100, 0, -100, 0, 1, 0,
+            100, 0, 100, 0, 1, 0,
+
+            -100, 0, -100, 0, 1, 0,
+            100, 0, 100, 0, 1, 0,
+            -100, 0, 100, 0, 1, 0
+        ], dtype=np.float32)
+
+        self.vao = glGenVertexArrays(1)
+        glBindVertexArray(self.vao)
+
+        self.vbo = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
+        glBufferData(GL_ARRAY_BUFFER, self.plane_vertices.nbytes, self.plane_vertices, GL_STATIC_DRAW)
+
+        # Position attribute (location = 0)
+        glEnableVertexAttribArray(0)
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 24, ctypes.c_void_p(0))
+
+        # Normal attribute (location = 1)
+        glEnableVertexAttribArray(1)
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 24, ctypes.c_void_p(12))
+
+    def draw(self, shader):
+        glBindVertexArray(self.vao)
+        shader.use()
+        shader.set_uniform_3f("objectColor", [0.5, 0.5, 0.5])  # Gray color
+        shader.set_uniform_3f("lightColor", [1.0, 1.0, 1.0])
+        glDrawArrays(GL_TRIANGLES, 0, 6)
+
+    def destroy(self):
+        """Clean up OpenGL buffers"""
+        glDeleteBuffers(1, [self.vbo])
+        glDeleteVertexArrays(1, [self.vao])
+
+
 class Shader:
     """
     Encapsulates shader creation, compilation, and management.
@@ -135,7 +176,7 @@ class Object3D:
         self.vertex_count = len(self.vertices) // 8  # 8 floats per vertex
 
         # Initialize position and rotation
-        self.position = np.array([0, 0, 50], dtype=np.float32)
+        self.position = np.array([0, 0, 0], dtype=np.float32)
         self.eulers = np.array([0, 0, 0], dtype=np.float32)  # Rotation in degrees
 
         # Create VAO and VBO
@@ -264,6 +305,7 @@ class GraphicsEngine:
         self.window_size = tuple(self.config["window_size"])
         self.clock = pg.time.Clock()
 
+
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
@@ -281,8 +323,11 @@ class GraphicsEngine:
         )
         self.shader.use()
 
+        # Initialize plane
+        self.plane = Plane()
+
         # Initialize the 3D object
-        self.object = Object3D(self.config["objects"]["monkey_wrench"])
+        self.object = Object3D(self.config["objects"]["obj"])
 
         # Set up projection matrix
         self.projection = pyrr.matrix44.create_perspective_projection_matrix(
@@ -292,14 +337,14 @@ class GraphicsEngine:
 
         # Set up camera
         self.camera = Camera(
-            position=[0, 0, 60],
+            position=[0, 5, 10],
             target=[0, 0, 0],
-            up=[0, 1, 0]
+            up=[0, 2, 0]
         )
         self.shader.set_uniform_matrix4fv("view", self.camera.view)
 
         # Set up texture
-        self.texture = Material(self.config["textures"]["blue"])
+        self.texture = Material(self.config["textures"]["tex"])
 
         # Start the main loop
         self.run()
@@ -311,6 +356,8 @@ class GraphicsEngine:
         for event in pg.event.get():
             if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
                 self.object.destroy()
+                self.shader.destroy()
+                self.plane.destroy()
                 pg.quit()
                 sys.exit()
 
@@ -319,8 +366,10 @@ class GraphicsEngine:
         Render the scene by updating the object's rotation, clearing the frame buffer,
         and drawing the object.
         """
+        self.plane.draw(self.shader)
+
         # Update object rotation
-        self.object.eulers[2] += 0.2  # Rotate around the Z-axis
+        self.object.eulers[2] += 0.5  # Rotate around the Z-axis
         if self.object.eulers[2] > 360:
             self.object.eulers[2] -= 360
 
@@ -344,7 +393,7 @@ class GraphicsEngine:
         self.shader.set_uniform_matrix4fv("model", model_transform)
 
         # Set light and camera positions for lighting calculations
-        light_pos = np.array([10.0, 10.0, 10.0], dtype=np.float32)
+        light_pos = np.array([10, 10, 10], dtype=np.float32)
         view_pos = self.camera.position
         self.shader.set_uniform_3f("lightPos", light_pos)
         self.shader.set_uniform_3f("viewPos", view_pos)
@@ -354,15 +403,14 @@ class GraphicsEngine:
         glBindVertexArray(self.object.vao)
         glDrawArrays(GL_TRIANGLES, 0, self.object.vertex_count)
 
-        # Swap buffers
-        pg.display.flip()
+        self.clock.tick(60)
 
     def run(self):
         """Main loop of the graphics engine."""
         while True:
             self._check_events()
             self._render()
-            self.clock.tick(60)
+
 
 if __name__ == '__main__':
     engine = GraphicsEngine("config.json")

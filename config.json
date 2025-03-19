@@ -5,9 +5,9 @@
         "fragment": "shaders/fragment.txt"
     },
     "objects": {
-        "monkey_wrench": "objects/10299_Monkey-Wrench_v1_L3.obj"
+        "obj": "objects/ninja-h2.obj"
     },
     "textures": {
-        "blue": "textures/blue.png"
+        "tex": "textures/green.png"
     }
 }
