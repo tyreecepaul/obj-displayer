@@ -12,47 +12,6 @@ import obj_loader as obj
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
-class Plane:
-    def __init__(self):
-        self.plane_vertices = np.array([
-            #  X,   Y,   Z,   Nx, Ny, Nz
-            -100, 0, -100, 0, 1, 0,
-            100, 0, -100, 0, 1, 0,
-            100, 0, 100, 0, 1, 0,
-
-            -100, 0, -100, 0, 1, 0,
-            100, 0, 100, 0, 1, 0,
-            -100, 0, 100, 0, 1, 0
-        ], dtype=np.float32)
-
-        self.vao = glGenVertexArrays(1)
-        glBindVertexArray(self.vao)
-
-        self.vbo = glGenBuffers(1)
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
-        glBufferData(GL_ARRAY_BUFFER, self.plane_vertices.nbytes, self.plane_vertices, GL_STATIC_DRAW)
-
-        # Position attribute (location = 0)
-        glEnableVertexAttribArray(0)
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 24, ctypes.c_void_p(0))
-
-        # Normal attribute (location = 1)
-        glEnableVertexAttribArray(1)
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 24, ctypes.c_void_p(12))
-
-    def draw(self, shader):
-        glBindVertexArray(self.vao)
-        shader.use()
-        shader.set_uniform_3f("objectColor", [0.5, 0.5, 0.5])  # Gray color
-        shader.set_uniform_3f("lightColor", [1.0, 1.0, 1.0])
-        glDrawArrays(GL_TRIANGLES, 0, 6)
-
-    def destroy(self):
-        """Clean up OpenGL buffers"""
-        glDeleteBuffers(1, [self.vbo])
-        glDeleteVertexArrays(1, [self.vao])
-
-
 class Shader:
     """
     Encapsulates shader creation, compilation, and management.
@@ -145,7 +104,8 @@ class Material:
         image = pg.image.load(texture_path)
         image_width, image_height = image.get_rect().size
         image_data = pg.image.tostring(image, "RGBA")
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA,
+                     GL_UNSIGNED_BYTE, image_data)
         glGenerateMipmap(GL_TEXTURE_2D)
 
     def use(self):
@@ -283,10 +243,77 @@ class Object3D:
         # Flatten and return the scaled vertices
         return self._flatten_vertices(scaled_vertices)
 
+    def get_bounding_box(self):
+        """
+        Calculate the bounding box of the object.
+
+        :return: (x_min, x_max, y_min, y_max, z_min, z_max)
+        """
+        sub_matrix = self._split_array(self.vertices, 8)
+        x_coords = [v[0] for v in sub_matrix]
+        y_coords = [v[1] for v in sub_matrix]
+        z_coords = [v[2] for v in sub_matrix]
+        return (
+            min(x_coords), max(x_coords),
+            min(y_coords), max(y_coords),
+            min(z_coords), max(z_coords)
+        )
+
+    def get_lowest_y(self):
+        """
+        Calculate the lowest y-coordinate of the object.
+        """
+        _, _, y_min, _, _, _ = self.get_bounding_box()
+        return y_min
+
+    def place_object_on_base(self, base_height=0.0):
+        """
+        Place the object on top of the base.
+        :param base_height: The height of the base (default is 0.0 for a flat plane).
+        """
+        # Get the lowest y-coordinate of the object
+        y_min = self.get_lowest_y()
+
+        # Adjust the object's position so it sits on top of the base
+        self.position[1] = base_height - y_min
+
+
     def destroy(self):
         """Clean up the VAO and VBO."""
         glDeleteBuffers(1, [self.vbo])
         glDeleteVertexArrays(1, [self.vao])
+
+
+class BaseObject(Object3D):
+    def __init__(self):
+        base_vertices = [
+            # Positions          # Texture Coords  # Normals
+            -5.0, 0.0, -5.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+            5.0, 0.0, -5.0, 1.0, 0.0, 0.0, 1.0, 0.0,
+            5.0, 0.0, 5.0, 1.0, 1.0, 0.0, 1.0, 0.0,
+            -5.0, 0.0, 5.0, 0.0, 1.0, 0.0, 1.0, 0.0,
+        ]
+
+        self.vertices = np.array(base_vertices, dtype=np.float32)
+        self.vertex_count = len(self.vertices) // 8
+
+        self.position = np.array([0, -1, 0], dtype=np.float32)
+        self.eulers = np.array([0, 0, 0], dtype=np.float32)
+
+        self.vao = glGenVertexArrays(1)
+        glBindVertexArray(self.vao)
+
+        self.vbo = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
+        glBufferData(GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, GL_STATIC_DRAW)
+
+        # Set up vertex attribute pointers
+        glEnableVertexAttribArray(0)
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(0))
+        glEnableVertexAttribArray(1)
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(12))
+        glEnableVertexAttribArray(2)
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(24))
 
 
 class GraphicsEngine:
@@ -305,7 +332,6 @@ class GraphicsEngine:
         self.window_size = tuple(self.config["window_size"])
         self.clock = pg.time.Clock()
 
-
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
@@ -323,11 +349,12 @@ class GraphicsEngine:
         )
         self.shader.use()
 
-        # Initialize plane
-        self.plane = Plane()
-
         # Initialize the 3D object
         self.object = Object3D(self.config["objects"]["obj"])
+
+        # Initialize Base
+        self.base = BaseObject()
+        self.object.place_object_on_base(base_height=-1)
 
         # Set up projection matrix
         self.projection = pyrr.matrix44.create_perspective_projection_matrix(
@@ -337,9 +364,9 @@ class GraphicsEngine:
 
         # Set up camera
         self.camera = Camera(
-            position=[0, 5, 10],
+            position=[0, 5, 20],
             target=[0, 0, 0],
-            up=[0, 2, 0]
+            up=[0, 3, 0]
         )
         self.shader.set_uniform_matrix4fv("view", self.camera.view)
 
@@ -357,7 +384,7 @@ class GraphicsEngine:
             if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
                 self.object.destroy()
                 self.shader.destroy()
-                self.plane.destroy()
+                self.base.destroy()
                 pg.quit()
                 sys.exit()
 
@@ -366,7 +393,6 @@ class GraphicsEngine:
         Render the scene by updating the object's rotation, clearing the frame buffer,
         and drawing the object.
         """
-        self.plane.draw(self.shader)
 
         # Update object rotation
         self.object.eulers[2] += 0.5  # Rotate around the Z-axis
@@ -376,6 +402,16 @@ class GraphicsEngine:
         # Clear frame buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         self.shader.use()
+
+        # Render the base
+        base_transform = pyrr.matrix44.create_from_translation(
+            vec=self.base.position,
+            dtype=np.float32
+        )
+        self.shader.set_uniform_matrix4fv("model", base_transform)
+        self.texture.use()
+        glBindVertexArray(self.base.vao)
+        glDrawArrays(GL_TRIANGLE_FAN, 0, self.base.vertex_count)
 
         # Calculate model matrix
         model_transform = pyrr.matrix44.create_from_eulers(
@@ -403,6 +439,7 @@ class GraphicsEngine:
         glBindVertexArray(self.object.vao)
         glDrawArrays(GL_TRIANGLES, 0, self.object.vertex_count)
 
+        pg.display.flip()
         self.clock.tick(60)
 
     def run(self):

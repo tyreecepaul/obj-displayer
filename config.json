@@ -1,5 +1,5 @@
 {
-    "window_size": [1600, 900],
+    "window_size": [1080, 720],
     "shaders": {
         "vertex": "shaders/vertex.txt",
         "fragment": "shaders/fragment.txt"
@@ -8,6 +8,6 @@
         "obj": "objects/ninja-h2.obj"
     },
     "textures": {
-        "tex": "textures/green.png"
+        "tex": "textures/blue.png"
     }
 }
