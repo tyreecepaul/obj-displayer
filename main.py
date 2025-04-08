@@ -369,6 +369,7 @@ class GraphicsEngine:
             up=[0, 3, 0]
         )
         self.shader.set_uniform_matrix4fv("view", self.camera.view)
+        self.shader.set_uniform_3f("cameraPos", self.camera.position)
 
         # Set up texture
         self.texture = Material(self.config["textures"]["tex"])
@@ -403,6 +404,7 @@ class GraphicsEngine:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         self.shader.use()
 
+
         # Render the base
         base_transform = pyrr.matrix44.create_from_translation(
             vec=self.base.position,
@@ -429,7 +431,7 @@ class GraphicsEngine:
         self.shader.set_uniform_matrix4fv("model", model_transform)
 
         # Set light and camera positions for lighting calculations
-        light_pos = np.array([10, 10, 10], dtype=np.float32)
+        light_pos = np.array([75, 75, 75], dtype=np.float32)
         view_pos = self.camera.position
         self.shader.set_uniform_3f("lightPos", light_pos)
         self.shader.set_uniform_3f("viewPos", view_pos)

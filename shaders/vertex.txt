@@ -1,25 +1,27 @@
 #version 330 core
 
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec2 aTexCoord;
-layout(location = 2) in vec3 aNormal;
+layout(location = 0) in vec3 aPos;   // Vertex position
+layout(location = 1) in vec2 aTexCoord; // Texture coordinates
+layout(location = 2) in vec3 aNormal;  // Normal vector
 
-out vec2 TexCoord;
-out vec3 Normal;
-out vec3 FragPos;
+out vec2 TexCoord; // Output texture coordinates
+out vec3 FragPos;  // Output fragment position in world space
+out vec3 Normal;   // Output normal vector
+out vec3 ViewDir;  // Output view direction
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+uniform mat4 model; // Model matrix
+uniform mat4 view;  // View matrix
+uniform mat4 projection; // Projection matrix
+uniform vec3 cameraPos; // Camera position (added as uniform)
 
 void main()
 {
-    FragPos = vec3(model * vec4(aPos, 1.0));
-
-    TexCoord = aTexCoord;
-
-    mat3 normalMatrix = transpose(inverse(mat3(model)));
-    Normal = normalize(normalMatrix * aNormal);
-
+    // Calculate the final vertex position after transformations
     gl_Position = projection * view * model * vec4(aPos, 1.0);
+
+    // Pass texture coordinates, normal, and fragment position to fragment shader
+    TexCoord = aTexCoord;
+    FragPos = vec3(model * vec4(aPos, 1.0));
+    Normal = normalize(mat3(transpose(inverse(model))) * aNormal); // Correct normals
+    ViewDir = normalize(cameraPos - FragPos); // Camera position should be passed as a uniform
 }

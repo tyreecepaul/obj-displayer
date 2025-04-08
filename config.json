@@ -8,6 +8,6 @@
         "obj": "objects/ninja-h2.obj"
     },
     "textures": {
-        "tex": "textures/blue.png"
+        "tex": "textures/green.png"
     }
 }
